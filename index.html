@@ -565,6 +565,9 @@ async function sendMessage() {
   S.waiting = true;
 
   const chatArea = document.getElementById('chat-area');
+  const turnId = Date.now();
+  const idA = `body-a-${turnId}`;
+  const idB = `body-b-${turnId}`;
   const turnEl = document.createElement('div');
   turnEl.className = 'msg-turn fade-up';
   turnEl.innerHTML = `
@@ -572,29 +575,29 @@ async function sendMessage() {
       <div class="user-bubble">${esc(msg)}</div>
     </div>
     <div class="battle-row">
-      <div class="agent-card" id="card-a">
+      <div class="agent-card" id="card-a-${turnId}">
         <div class="agent-card-header">
           <span class="agent-card-label a">${esc(NAME_A)}</span>
           <div class="agent-card-actions">
-            <button class="card-action-btn" onclick="copyCard('body-a')" title="Kopiuj odpowiedź">
+            <button class="card-action-btn" onclick="copyCard('${idA}')" title="Kopiuj odpowiedź">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             </button>
           </div>
         </div>
-        <div class="agent-card-body" id="body-a">
+        <div class="agent-card-body" id="${idA}">
           <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
       </div>
-      <div class="agent-card" id="card-b">
+      <div class="agent-card" id="card-b-${turnId}">
         <div class="agent-card-header">
           <span class="agent-card-label b">${esc(NAME_B)}</span>
           <div class="agent-card-actions">
-            <button class="card-action-btn" onclick="copyCard('body-b')" title="Kopiuj odpowiedź">
+            <button class="card-action-btn" onclick="copyCard('${idB}')" title="Kopiuj odpowiedź">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             </button>
           </div>
         </div>
-        <div class="agent-card-body" id="body-b">
+        <div class="agent-card-body" id="${idB}">
           <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
       </div>
@@ -603,14 +606,14 @@ async function sendMessage() {
   document.getElementById('topbar-agents').style.display = 'flex';
   scrollDown();
 
-  S.currentTurn = { msg, responseA: '', responseB: '' };
+  S.currentTurn = { msg, responseA: '', responseB: '', cardA: `card-a-${turnId}`, cardB: `card-b-${turnId}` };
 
   const [rA, rB] = await Promise.allSettled([
     fetchAgent(WEBHOOK_A, msg),
     fetchAgent(WEBHOOK_B, msg),
   ]);
 
-  const bodyA = document.getElementById('body-a');
+  const bodyA = document.getElementById(idA);
   if (rA.status === 'fulfilled') {
     S.currentTurn.responseA = rA.value;
     typewriter(bodyA, rA.value);
@@ -618,7 +621,7 @@ async function sendMessage() {
     bodyA.innerHTML = `<span style="color:#ef4444;font-size:12.5px">⚠ Błąd połączenia z ${esc(NAME_A)}: ${esc(String(rA.reason))}</span>`;
   }
 
-  const bodyB = document.getElementById('body-b');
+  const bodyB = document.getElementById(idB);
   if (rB.status === 'fulfilled') {
     S.currentTurn.responseB = rB.value;
     typewriter(bodyB, rB.value);
@@ -702,10 +705,14 @@ async function castVote(choice) {
   const btnId = { A:'vote-a', B:'vote-b', both:'vote-both', none:'vote-none' }[choice];
   document.getElementById(btnId)?.classList.add('voted');
 
-  document.getElementById('card-a')?.classList.remove('winner-a','winner-b');
-  document.getElementById('card-b')?.classList.remove('winner-a','winner-b');
-  if (choice === 'A') document.getElementById('card-a')?.classList.add('winner-a');
-  if (choice === 'B') document.getElementById('card-b')?.classList.add('winner-b');
+  if (S.currentTurn?.cardA) {
+    const cA = document.getElementById(S.currentTurn.cardA);
+    const cB = document.getElementById(S.currentTurn.cardB);
+    cA?.classList.remove('winner-a','winner-b');
+    cB?.classList.remove('winner-a','winner-b');
+    if (choice === 'A') cA?.classList.add('winner-a');
+    if (choice === 'B') cB?.classList.add('winner-b');
+  }
 
   S.votes[choice] = (S.votes[choice] || 0) + 1;
   S.totalVotes++;
