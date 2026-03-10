@@ -381,7 +381,7 @@
         <div class="empty-icon">⚔️</div>
         <div class="empty-title">RAG Arena</div>
         <p class="empty-sub">Zadaj pytanie — obaj agenci RAG odpowiedzą równocześnie. Zdecyduj który radzi sobie lepiej.</p>
-        <div class="empty-hints" style="display:none">
+        <div class="empty-hints">
           <span class="hint-chip" onclick="useHint(this)">Co to jest RAG?</span>
           <span class="hint-chip" onclick="useHint(this)">Jakie dokumenty obsługujemy?</span>
           <span class="hint-chip" onclick="useHint(this)">Opisz naszą ofertę handlową</span>
@@ -455,7 +455,7 @@
 //  ⚙️  KONFIGURACJA — wpisz swoje webhooki tutaj
 // ════════════════════════════════════════════════
 
-const WEBHOOK_A     = 'https://mediafy-sparta.app.n8n.cloud/webhook/6b1aed39-07a5-4cc3-98d7-3f0bb23d18b9';
+const WEBHOOK_A     = 'https://mediafy-sparta.app.n8n.cloud/webhook/6b1aed39-07a5-4cc3-98d7-3f0bb23d18b9';   // Agent A
 const WEBHOOK_B     = 'TUTAJ_WKLEJ_URL_AGENTA_B';   // np. https://xxx.n8n.cloud/webhook/agent-b
 const WEBHOOK_VOTES = '';                            // opcjonalny — do zapisywania głosów w n8n
 const NAME_A        = 'Agent A';                     // wyświetlana nazwa agenta A
@@ -464,6 +464,9 @@ const NAME_B        = 'Agent B';                     // wyświetlana nazwa agent
 // ════════════════════════════════════════════════
 //  Nie zmieniaj nic poniżej tej linii
 // ════════════════════════════════════════════════
+
+// Unikalny identyfikator sesji — generowany raz przy załadowaniu strony
+let currentSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
 const S = {
   votes: { A:0, B:0, both:0, none:0 },
@@ -532,6 +535,8 @@ function newChat() {
   S.currentTurn = null;
   S.waiting = false;
   enableInput();
+  // Resetuj sesję przy nowej rozmowie
+  currentSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 }
 function useHint(el) {
   document.getElementById('chat-input').value = el.textContent;
@@ -631,7 +636,7 @@ async function fetchAgent(url, message) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, sessionId: currentSessionId }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
