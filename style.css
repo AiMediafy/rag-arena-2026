@@ -460,7 +460,7 @@ body {
 /* ══════════════════════════════════════════════════════════
    INPUT
    ══════════════════════════════════════════════════════════ */
-#input-area { padding: 10px 60px 16px; background: var(--bg); flex-shrink: 0; }
+#input-area { padding: 10px 120px 16px; background: var(--bg); flex-shrink: 0; }
 .input-box {
   background: var(--card); border: 1px solid var(--border2);
   border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.3);
