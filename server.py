@@ -39,11 +39,11 @@ for entry in os.getenv("USERS", "").split(","):
 # ── ROUTING ───────────────────────────────────────────────
 @app.route('/')
 def index():
-    return send_from_directory('public', 'index.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/<path:path>')
 def static_files(path):
-    return send_from_directory('public', path)
+    return send_from_directory('.', path)
 
 # ── API: LOGIN ────────────────────────────────────────────
 @app.route('/api/login', methods=['POST'])
