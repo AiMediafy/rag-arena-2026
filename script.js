@@ -315,6 +315,15 @@ function closeLeaderboard() {
 // ════════════════════════════════════════════════════════
 
 function newChat() {
+  // Nowy czat tylko gdy czat jest zablokowany (błąd zgłoszony) lub brak historii
+  if (isVoting && !isLocked) {
+    showToast('⚠ Najpierw oceń odpowiedzi agentów');
+    return;
+  }
+  if (!isLocked && chatHistory.length > 0) {
+    showToast('⚠ Nowy czat dostępny dopiero po zgłoszeniu błędu');
+    return;
+  }
   sessionId   = crypto.randomUUID();
   chatHistory = [];
   isVoting    = false;
@@ -626,6 +635,17 @@ function setVoteBtnsDisabled(disabled) {
 
 function vote(winner) {
   if (!isVoting) return;
+  // Upewnij się że karty są dostępne
+  if (!currentCardA || !currentCardB) {
+    const cards = document.querySelectorAll('.agent-card');
+    if (cards.length >= 2) {
+      const lastBattle = document.querySelector('.msg-turn:last-child .battle-row');
+      if (lastBattle) {
+        currentCardA = lastBattle.querySelector('.agent-card:nth-child(1)');
+        currentCardB = lastBattle.querySelector('.agent-card:nth-child(2)');
+      }
+    }
+  }
   setVoteBtnsDisabled(true);
   sessionVotes[winner] = (sessionVotes[winner] || 0) + 1;
 
