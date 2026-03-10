@@ -763,9 +763,12 @@ function openErrorModal(mode) {
   const divider  = document.getElementById('error-modal-divider');
   const box      = document.getElementById('error-modal-box');
 
-  // Pokaż odpowiednie kolumny
-  colA.style.display     = (mode === 'Bad' || mode === 'B') ? '' : 'none';
-  colB.style.display     = (mode === 'Bad' || mode === 'A') ? '' : 'none';
+  // Pokaż kolumnę tego agenta który popełnił błąd
+  // mode='A' → Agent A ma błąd → pokazujemy colA
+  // mode='B' → Agent B ma błąd → pokazujemy colB
+  // mode='Bad' → obaj mają błąd → pokazujemy obie
+  colA.style.display     = (mode === 'Bad' || mode === 'A') ? '' : 'none';
+  colB.style.display     = (mode === 'Bad' || mode === 'B') ? '' : 'none';
   divider.style.display  = mode === 'Bad' ? '' : 'none';
   box.style.width        = mode === 'Bad' ? '680px' : '380px';
 
