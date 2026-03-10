@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 load_dotenv(override=True)
 
-app = Flask(__name__, static_folder='public')
+app = Flask(__name__, static_folder='.')
 
 # ── MONGODB ───────────────────────────────────────────────
 MONGO_URI = os.getenv("MONGO_URI")
