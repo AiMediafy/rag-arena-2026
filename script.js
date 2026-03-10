@@ -627,6 +627,8 @@ function showVotePhase2() {
   document.getElementById('vote-phase-1').classList.add('phase2-hidden');
   document.getElementById('vote-phase-2').classList.remove('phase2-hidden');
   document.getElementById('vote-label').textContent = 'Który agent odpowiedział lepiej?';
+  // Re-enable tylko przyciski fazy 2
+  document.querySelectorAll('#vote-phase-2 .vote-btn').forEach(b => b.disabled = false);
 }
 
 function setVoteBtnsDisabled(disabled) {
