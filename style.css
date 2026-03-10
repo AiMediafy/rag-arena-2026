@@ -5,9 +5,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #000000;
-  --bg2:         #080810;
-  --card:        #0a0a12;
+  --bg:          #0d0d14;
+  --bg2:         #12121e;
+  --card:        #16162a;
   --border:      rgba(255,255,255,0.06);
   --border2:     rgba(255,255,255,0.11);
   --text:        #ffffff;
@@ -116,7 +116,7 @@ body {
    ══════════════════════════════════════════════════════════ */
 #sidebar {
   width: var(--sidebar-w); min-width: var(--sidebar-w);
-  background: var(--bg2); border-right: 1px solid var(--border);
+  background: rgba(18,18,32,0.95); border-right: 1px solid rgba(255,255,255,.08);
   display: flex; flex-direction: column; overflow: hidden;
 }
 
@@ -305,11 +305,12 @@ body {
 
 /* Messages */
 .msg-turn { display: flex; flex-direction: column; gap: 10px; }
-.user-wrap { display: flex; justify-content: flex-end; }
+.user-wrap { display: flex; justify-content: center; }
 .user-bubble {
   background: rgba(37,99,235,.15); border: 1px solid rgba(37,99,235,.25);
-  border-radius: 18px 18px 4px 18px; padding: 10px 16px; max-width: 58%;
+  border-radius: 18px; padding: 10px 20px; max-width: 70%;
   font-size: 14px; line-height: 1.6; color: var(--text);
+  text-align: center;
 }
 
 /* Battle row */
@@ -420,13 +421,13 @@ body {
 
 .vote-btn {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 9px 16px; border-radius: 100px; flex: 1; min-width: 0;
-  border: 1px solid var(--border2); background: transparent;
-  font-size: 12.5px; font-weight: 600; cursor: pointer;
-  font-family: 'Inter', sans-serif; color: var(--text2);
+  padding: 10px 18px; border-radius: 100px; flex: 1; min-width: 0;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif; color: rgba(255,255,255,.85);
   transition: all .18s; white-space: nowrap;
 }
-.vote-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.05); }
+.vote-btn:hover { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.12); }
 .vote-btn:disabled { pointer-events: none; opacity: .4; }
 
 /* Phase 1 specific */
