@@ -166,7 +166,7 @@ function renderHistoryGroup(containerId, chats) {
     let icon = '·';
     if (chat.isLocked) {
       const s = parseInt(chat.severity || 0);
-      icon = s >= 5 ? '💥' : ('⭐'.repeat(Math.max(1, s)));
+      icon = s >= 5 ? '💥' : '⭐';
     }
 
     item.innerHTML = `
@@ -827,7 +827,7 @@ function lockChat(severity) {
   if (idx !== -1) {
     all[idx].isLocked  = true;
     all[idx].severity  = severity;
-    all[idx].title     = severity >= 5 ? '💥 BŁĄD KRYTYCZNY' : `Zgłoszenie błędu ${'⭐'.repeat(Math.max(1, severity))}`;
+    all[idx].title     = severity >= 5 ? '💥 Błąd krytyczny' : `Zgłoszenie ⭐ ${severity}/5`;
     saveChats(all);
   }
 
