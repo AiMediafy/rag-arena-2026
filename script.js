@@ -704,7 +704,7 @@ function vote(winner) {
   }
 
   saveVoteToHistory(winner);
-  sendFeedbackData(winner, null, 'preference');
+  // Preferencja formatu — nie zapisujemy do arkusza
   finishVoting();
 }
 
