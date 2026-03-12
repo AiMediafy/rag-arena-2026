@@ -43,6 +43,9 @@ def index():
 
 @app.route('/<path:path>')
 def static_files(path):
+    if path.startswith('api/'):
+        from flask import abort
+        abort(404)
     return send_from_directory('.', path)
 
 # ── API: LOGIN ────────────────────────────────────────────
