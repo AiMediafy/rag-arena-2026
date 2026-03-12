@@ -197,7 +197,7 @@ body {
 .history-group { display: flex; flex-direction: column; gap: 1px; }
 
 .history-item {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 6px; min-width: 0;
   padding: 6px 8px; border-radius: var(--radius-sm);
   cursor: pointer; font-size: 12.5px; color: var(--text3);
   transition: background .15s, color .15s;
@@ -209,10 +209,10 @@ body {
 .history-item.active { background: rgba(37,99,235,.1); color: var(--blue-light); }
 .history-item.locked { color: #ff8a80; }
 
-.hist-icon { font-size: 13px; flex-shrink: 0; width: 16px; text-align: center; }
+.hist-icon { font-size: 11px; flex-shrink: 0; max-width: 36px; text-align: center; letter-spacing: -1px; }
 .hist-title {
   flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding-right: 4px;
+  padding-right: 4px; min-width: 0;
 }
 .hist-rename {
   opacity: 0; flex-shrink: 0;
