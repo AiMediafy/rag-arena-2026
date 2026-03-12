@@ -346,10 +346,10 @@ function newChat() {
     <div class="empty-title">RAG Arena</div>
     <p class="empty-sub">Zadaj pytanie — obaj agenci RAG odpowiedzą równocześnie. Zdecyduj który radzi sobie lepiej i zgłoś błędy.</p>
     <div class="empty-hints">
-      <span class="hint-chip" onclick="useHint(this)">Potrzebuję samozamykacza</span>
-      <span class="hint-chip" onclick="useHint(this)">Jakie zamki do drzwi zewnętrznych?</span>
-      <span class="hint-chip" onclick="useHint(this)">Klamki do drzwi przesuwnych</span>
-      <span class="hint-chip" onclick="useHint(this)">Zawiasy do drzwi drewnianych</span>
+      <span class="hint-chip" onclick="useHint(this)">Jak dobrać wkładkę do drzwi?</span>
+      <span class="hint-chip" onclick="useHint(this)">Czym się różni wkładka atestowana od zwykłej?</span>
+      <span class="hint-chip" onclick="useHint(this)">Czy macie wkładki do drzwi antywłamaniowych?</span>
+      <span class="hint-chip" onclick="useHint(this)">Jakie wkładki pasują do zamka GERDA?</span>
     </div>`;
   area.appendChild(es);
 
