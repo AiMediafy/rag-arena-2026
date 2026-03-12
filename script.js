@@ -19,6 +19,8 @@ let lastResponseB      = '';
 let lastLatencyA       = 0;
 let lastLatencyB       = 0;
 let feedbackMode       = 'Bad';       // 'Bad' | 'A' | 'B'
+let scoreA             = 0;
+let scoreB             = 0;
 let totalQuestions     = 0;
 
 // Aktualne karty (do kolorowania po głosowaniu)
@@ -330,6 +332,8 @@ function newChat() {
   isLocked    = false;
   currentCardA = null;
   currentCardB = null;
+  scoreA = 0; scoreB = 0;
+  updateScoreBadges();
 
   const area = document.getElementById('chat-area');
   area.innerHTML = '';
@@ -419,52 +423,56 @@ async function sendMessage() {
   document.getElementById('topbar-agents').style.display = 'flex';
   scrollDown();
 
-  // Pobierz odpowiedzi równolegle
-  const [rA, rB] = await Promise.allSettled([
-    callChat(msg, 'A'),
-    callChat(msg, 'B'),
-  ]);
-
-  // Agent A
-  const bodyA = document.getElementById(idA);
-  if (rA.status === 'fulfilled') {
-    lastResponseA = rA.value.output;
-    lastLatencyA  = rA.value.latency;
-    setLatencyBadge(cardIdA, lastLatencyA);
-    typewriter(bodyA, lastResponseA);
-  } else {
-    bodyA.innerHTML = errMsg(NAME_A, rA.reason);
-  }
-
-  // Agent B
-  const bodyB = document.getElementById(idB);
-  if (rB.status === 'fulfilled') {
-    lastResponseB = rB.value.output;
-    lastLatencyB  = rB.value.latency;
-    setLatencyBadge(cardIdB, lastLatencyB);
-    typewriter(bodyB, lastResponseB);
-  } else {
-    bodyB.innerHTML = errMsg(NAME_B, rB.reason);
-  }
-
-  // Zapisz w historii
-  chatHistory.push({
-    role: 'battle',
-    contentA: lastResponseA, contentB: lastResponseB,
-    latencyA: lastLatencyA,  latencyB: lastLatencyB,
-  });
-  saveCurrentChat();
-
-  // Zapamiętaj karty
+  // Pobierz odpowiedzi — każda pojawia się gdy tylko nadejdzie
   currentCardA = document.getElementById(cardIdA);
   currentCardB = document.getElementById(cardIdB);
+  let doneA = false, doneB = false;
 
-  // Pokaż głosowanie
-  isVoting = true;
-  showVotePhase1();
-  updateInputState();
+  function checkBothDone() {
+    if (!doneA || !doneB) return;
+    chatHistory.push({
+      role: 'battle',
+      contentA: lastResponseA, contentB: lastResponseB,
+      latencyA: lastLatencyA,  latencyB: lastLatencyB,
+    });
+    saveCurrentChat();
+    isVoting = true;
+    showVotePhase1();
+    updateInputState();
+    scrollDown();
+  }
 
-  scrollDown();
+  callChat(msg, 'A').then(r => {
+    const bodyA = document.getElementById(idA);
+    lastResponseA = r.output;
+    lastLatencyA  = r.latency;
+    setLatencyBadge(cardIdA, lastLatencyA);
+    typewriter(bodyA, lastResponseA);
+    doneA = true;
+    scrollDown();
+    checkBothDone();
+  }).catch(err => {
+    const bodyA = document.getElementById(idA);
+    bodyA.innerHTML = errMsg(NAME_A, err);
+    doneA = true;
+    checkBothDone();
+  });
+
+  callChat(msg, 'B').then(r => {
+    const bodyB = document.getElementById(idB);
+    lastResponseB = r.output;
+    lastLatencyB  = r.latency;
+    setLatencyBadge(cardIdB, lastLatencyB);
+    typewriter(bodyB, lastResponseB);
+    doneB = true;
+    scrollDown();
+    checkBothDone();
+  }).catch(err => {
+    const bodyB = document.getElementById(idB);
+    bodyB.innerHTML = errMsg(NAME_B, err);
+    doneB = true;
+    checkBothDone();
+  });
 }
 
 async function callChat(message, model) {
@@ -680,23 +688,29 @@ function vote(winner) {
     return;
   }
 
-  // Faza 2 — preferencja
+  // Faza 2 — preferencja (oba zostają zielone, tylko gwiazdka dla wygranego)
   if (winner === 'A') {
-    applyClasses(currentCardA, 'success');
-    applyClasses(currentCardB, 'error');
     addWinnerStar(currentCardA);
+    scoreA++;
+    updateScoreBadges();
   } else if (winner === 'B') {
-    applyClasses(currentCardB, 'success');
-    applyClasses(currentCardA, 'error');
     addWinnerStar(currentCardB);
+    scoreB++;
+    updateScoreBadges();
   } else if (winner === 'Tie_Phase2') {
-    applyClasses(currentCardA, 'success');
-    applyClasses(currentCardB, 'success');
+    // remis — nic nie zmieniamy
   }
 
   saveVoteToHistory(winner);
   sendFeedbackData(winner, null, 'preference');
   finishVoting();
+}
+
+function updateScoreBadges() {
+  const sa = document.getElementById('score-a');
+  const sb = document.getElementById('score-b');
+  if (sa) sa.textContent = scoreA;
+  if (sb) sb.textContent = scoreB;
 }
 
 function applyClasses(card, type) {
