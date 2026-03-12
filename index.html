@@ -6,50 +6,340 @@
   <title>RAG Arena – Battle Mode</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/lib/marked.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #000000;
+      --bg2:         #080810;
+      --card:        #0a0a12;
+      --border:      rgba(255,255,255,0.06);
+      --border2:     rgba(255,255,255,0.11);
+      --text:        #ffffff;
+      --text2:       #9090a8;
+      --text3:       #505060;
+      --blue:        #2563eb;
+      --blue-soft:   rgba(37,99,235,0.1);
+      --blue-light:  #3b82f6;
+      --green-soft:  rgba(16,163,127,0.1);
+      --radius-lg:   18px;
+      --radius-sm:   8px;
+      --sidebar-w:   220px;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .glow-bg {
+      position: fixed;
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(37,99,235,0.07) 0%, transparent 70%);
+      top: -80px; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .app-shell { display: flex; flex: 1; overflow: hidden; position: relative; z-index: 1; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 16px 14px; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .logo-icon {
+      width: 30px; height: 30px; background: var(--blue);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .logo-text { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo-badge {
+      margin-left: auto; font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--blue-light); background: var(--blue-soft);
+      border: 1px solid rgba(37,99,235,0.25); padding: 2px 6px; border-radius: 100px;
+    }
+    .sidebar-nav { padding: 10px 10px 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: var(--radius-sm);
+      cursor: pointer; font-size: 13px; color: var(--text2);
+      transition: background .15s, color .15s;
+      border: none; background: none; width: 100%; text-align: left; font-family: 'Inter', sans-serif;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active { background: rgba(37,99,235,0.12); color: var(--blue-light); }
+    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+    .nav-item.active svg { opacity: 1; }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 8px 10px; }
+    .sidebar-section { padding: 0 10px; flex: 1; overflow-y: auto; }
+    .sidebar-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--text3); padding: 8px 10px 4px;
+    }
+    .history-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: var(--radius-sm);
+      cursor: pointer; font-size: 12.5px; color: var(--text3);
+      transition: background .15s, color .15s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      border: none; background: none; width: 100%; text-align: left; font-family: 'Inter', sans-serif;
+    }
+    .history-item:hover { background: rgba(255,255,255,0.04); color: var(--text2); }
+    .history-item .hist-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+
+    /* ── MAIN ── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+    #topbar {
+      display: flex; align-items: center;
+      padding: 0 20px; height: 52px;
+      border-bottom: 1px solid var(--border); gap: 10px; flex-shrink: 0;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+    }
+    .battle-pill {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12.5px; font-weight: 600;
+      background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25);
+      padding: 5px 13px; border-radius: 100px; color: var(--blue-light); cursor: default;
+    }
+    .battle-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--blue-light);
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .topbar-spacer { flex: 1; }
+    .agent-names { display: flex; align-items: center; gap: 8px; }
+    .agent-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px;
+      border: 1px solid var(--border2); color: var(--text2); background: transparent;
+    }
+    .agent-tag.a { border-color: rgba(37,99,235,0.35); color: var(--blue-light); background: var(--blue-soft); }
+    .agent-tag.b { border-color: rgba(16,163,127,0.35); color: #10a37f; background: var(--green-soft); }
+    .agent-vs { font-size: 10px; color: var(--text3); font-weight: 700; }
+
+    /* ── CHAT AREA ── */
+    #chat-area { flex: 1; overflow-y: auto; padding: 24px 20px 12px; display: flex; flex-direction: column; gap: 20px; }
+
+    #empty-state {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px; color: var(--text2); text-align: center; padding: 40px 20px;
+    }
+    .empty-icon {
+      width: 56px; height: 56px; background: rgba(37,99,235,0.1);
+      border: 1px solid rgba(37,99,235,0.2); border-radius: 16px;
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
+    }
+    .empty-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.4px; }
+    .empty-sub { font-size: 13px; max-width: 380px; line-height: 1.7; }
+    .empty-hints { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+    .hint-chip {
+      font-size: 12px; padding: 6px 14px; border-radius: 100px;
+      border: 1px solid var(--border2); background: var(--bg2); color: var(--text2);
+      cursor: pointer; transition: all .15s;
+    }
+    .hint-chip:hover { border-color: rgba(37,99,235,0.4); color: var(--blue-light); }
+
+    .msg-turn { display: flex; flex-direction: column; gap: 10px; }
+    .user-wrap { display: flex; justify-content: flex-end; }
+    .user-bubble {
+      background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.25);
+      border-radius: 18px 18px 4px 18px; padding: 10px 16px; max-width: 58%;
+      font-size: 14px; line-height: 1.6; color: var(--text);
+    }
+    .battle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .agent-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; transition: border-color .25s, box-shadow .25s;
+    }
+    .agent-card.winner-a { border-color: rgba(37,99,235,0.5); box-shadow: 0 0 24px rgba(37,99,235,0.1); }
+    .agent-card.winner-b { border-color: rgba(16,163,127,0.5); box-shadow: 0 0 24px rgba(16,163,127,0.1); }
+    .agent-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    .agent-card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+    .agent-card-label.a { color: var(--blue-light); }
+    .agent-card-label.b { color: #10a37f; }
+    .agent-card-actions { display: flex; gap: 4px; }
+    .card-action-btn {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: none; background: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text3); transition: background .15s, color .15s;
+    }
+    .card-action-btn:hover { background: rgba(255,255,255,0.06); color: var(--text2); }
+    .card-action-btn svg { width: 13px; height: 13px; }
+    .agent-card-body {
+      padding: 14px 16px; font-size: 13.5px; line-height: 1.7; min-height: 70px; color: #a8a8bc;
+    }
+    .agent-card-body p { margin-bottom: 8px; }
+    .agent-card-body p:last-child { margin-bottom: 0; }
+    .agent-card-body ul { padding-left: 1.2em; margin: 4px 0; }
+    .agent-card-body li { margin-bottom: 3px; }
+
+    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+    .typing-dots span {
+      width: 7px; height: 7px; background: var(--text3); border-radius: 50%;
+      animation: tdot 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes tdot { 0%,80%,100%{transform:scale(.65);opacity:.3} 40%{transform:scale(1);opacity:1} }
+    .streaming-cursor::after { content:'▋'; color:var(--blue-light); animation:bcur .7s step-end infinite; }
+    @keyframes bcur { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── VOTE BAR ── */
+    #vote-bar {
+      display: none; flex-direction: column; align-items: center;
+      gap: 10px; padding: 12px 20px 8px;
+      border-top: 1px solid var(--border); background: var(--bg2);
+    }
+    #vote-bar.visible { display: flex; }
+    .vote-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); }
+    .vote-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .vote-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 18px; border-radius: 100px;
+      border: 1px solid var(--border2); background: transparent;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: 'Inter', sans-serif; color: var(--text2); transition: all .18s;
+    }
+    .vote-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+    .vote-btn.vote-a:hover, .vote-btn.vote-a.voted { border-color: rgba(37,99,235,.5); color: var(--blue-light); background: var(--blue-soft); }
+    .vote-btn.vote-b:hover, .vote-btn.vote-b.voted { border-color: rgba(16,163,127,.5); color: #10a37f; background: var(--green-soft); }
+    .vote-btn.vote-both:hover, .vote-btn.vote-both.voted { border-color: rgba(234,179,8,.5); color: #eab308; background: rgba(234,179,8,.08); }
+    .vote-btn.vote-none:hover, .vote-btn.vote-none.voted { border-color: rgba(239,68,68,.4); color: #ef4444; background: rgba(239,68,68,.08); }
+    .vote-btn:disabled { pointer-events: none; opacity: .5; }
+    .vote-result-row { display: none; align-items: center; gap: 10px; font-size: 12px; color: var(--text3); }
+    .vote-result-row.visible { display: flex; }
+    .vote-result-row strong { color: var(--text2); }
+
+    /* ── INPUT ── */
+    #input-area { padding: 10px 20px 16px; background: var(--bg); flex-shrink: 0; }
+    .input-box {
+      background: var(--card); border: 1px solid var(--border2);
+      border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.3);
+      overflow: hidden; transition: border-color .2s;
+    }
+    .input-box:focus-within { border-color: rgba(37,99,235,.4); }
+    .input-row { display: flex; align-items: flex-end; padding: 10px 12px 10px 16px; gap: 8px; }
+    #chat-input {
+      flex: 1; border: none; background: none; outline: none;
+      font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text);
+      resize: none; max-height: 130px; min-height: 24px; line-height: 1.55; padding: 3px 0;
+    }
+    #chat-input::placeholder { color: var(--text3); }
+    #send-btn {
+      width: 34px; height: 34px; border-radius: 10px;
+      border: none; background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: opacity .15s, transform .1s;
+      flex-shrink: 0; box-shadow: 0 4px 12px rgba(37,99,235,.4);
+    }
+    #send-btn:hover { opacity: .9; }
+    #send-btn:active { transform: scale(.95); }
+    #send-btn:disabled { opacity: .3; cursor: not-allowed; box-shadow: none; }
+    #send-btn svg { width: 15px; height: 15px; }
+    .input-toolbar {
+      display: flex; align-items: center; gap: 2px;
+      padding: 5px 12px 9px; border-top: 1px solid var(--border);
+    }
+    .toolbar-btn {
+      display: flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px;
+      border: none; background: none; font-size: 11.5px; color: var(--text3);
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: background .15s, color .15s;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,.05); color: var(--text2); }
+    .toolbar-btn svg { width: 12px; height: 12px; }
+    .toolbar-spacer { flex: 1; }
+    .input-hint { font-size: 11px; color: var(--text3); }
+
+    /* ── LEADERBOARD ── */
+    #lb-panel {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.72); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; z-index: 99;
+    }
+    #lb-panel.open { display: flex; }
+    .lb-box {
+      background: #0a0a12; border: 1px solid var(--border2);
+      border-radius: 20px; padding: 32px; width: 560px; max-width: 94vw;
+      box-shadow: 0 24px 80px rgba(0,0,0,.7); position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 28px; height: 28px; background: rgba(255,255,255,.08);
+      border: none; border-radius: 50%; color: var(--text2); font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,.14); }
+    .lb-title { font-family: 'Syne', sans-serif; font-size: 19px; font-weight: 800; margin-bottom: 4px; }
+    .lb-sub { font-size: 12.5px; color: var(--text2); margin-bottom: 24px; }
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table th {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text3); text-align: left; padding: 0 12px 10px;
+    }
+    .lb-table td { font-size: 13px; color: var(--text2); padding: 10px 12px; border-top: 1px solid var(--border); }
+    .lb-table td:first-child { color: var(--text); font-weight: 500; }
+    .lb-bar-wrap { background: rgba(255,255,255,.06); border-radius: 100px; height: 6px; width: 100%; overflow: hidden; }
+    .lb-bar { height: 100%; border-radius: 100px; }
+    .lb-count { font-size: 12px; color: var(--blue-light); font-weight: 600; }
+    .lb-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 32px 0; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px);
+      background: rgba(10,10,18,.95); border: 1px solid var(--border2); color: var(--text);
+      padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500;
+      opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+      z-index: 200; backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0,0,0,.5);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation: fadeUp .3s ease both; }
+
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      .battle-row { grid-template-columns: 1fr; }
+      .user-bubble { max-width: 90%; }
+      .vote-btn { padding: 7px 12px; font-size: 12px; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  LOGIN OVERLAY                                         -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div id="login-screen" class="login-overlay">
-  <div class="glow-bg"></div>
-  <div class="login-card">
-    <div class="login-logo">⚔️</div>
-    <div class="login-title"><span class="login-rag">RAG</span> Arena</div>
-    <p class="login-sub">Zaloguj się do panelu porównawczego</p>
-    <div class="login-category">📦 Aktualnie testowana kategoria: <strong>WKŁADKI</strong></div>
-    <div class="login-fields">
-      <input type="text"     id="login-username" placeholder="Login"  autocomplete="off"       onkeypress="loginKey(event)" />
-      <div class="login-pw-wrap">
-        <input type="password" id="login-password" placeholder="Hasło"  autocomplete="new-password" onkeypress="loginKey(event)" />
-        <button class="login-eye" onclick="togglePw()" tabindex="-1">👁</button>
-      </div>
-      <button class="login-btn" onclick="handleLogin()">Zaloguj się</button>
-    </div>
-    <p id="login-error" class="login-error"></p>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  MAIN APP                                              -->
-<!-- ══════════════════════════════════════════════════════ -->
 <div class="glow-bg"></div>
 
 <div class="app-shell">
 
-  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <!-- SIDEBAR -->
   <nav id="sidebar">
-
     <div class="sidebar-logo" onclick="newChat()">
       <div class="logo-icon">⚔️</div>
       <span class="logo-text">RAG Arena</span>
       <span class="logo-badge">BETA</span>
     </div>
-
     <div class="sidebar-nav">
       <button class="nav-item active" onclick="newChat()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -57,52 +347,17 @@
       </button>
       <button class="nav-item" onclick="openLeaderboard()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Wyniki sesji
+        Wyniki
       </button>
     </div>
-
     <div class="sidebar-divider"></div>
-
-    <!-- Licznik pytań -->
-    <div class="question-counter">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      <span class="qc-label">Zadanych pytań</span>
-      <span class="qc-value" id="question-count">0</span>
-    </div>
-
-    <!-- Mini ranking -->
-    <div class="mini-lb">
-      <div class="mini-lb-title">Ranking testerów</div>
-      <div id="mini-lb-list" class="mini-lb-list">
-        <div class="mini-lb-empty">Ładowanie…</div>
-      </div>
-    </div>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- Historia czatów -->
     <div class="sidebar-section">
-      <div id="history-today-label"   class="sidebar-section-label" style="display:none">Dzisiaj</div>
-      <div id="history-today"         class="history-group"></div>
-      <div id="history-older-label"   class="sidebar-section-label" style="display:none">Starsze</div>
-      <div id="history-older"         class="history-group"></div>
+      <div class="sidebar-section-label">Dzisiaj</div>
+      <div id="history-list"></div>
     </div>
-
-    <!-- User footer -->
-    <div class="sidebar-footer">
-      <div class="user-row" onclick="logout()">
-        <div class="user-avatar">👤</div>
-        <div class="user-info">
-          <span id="display-user" class="user-name">—</span>
-          <span class="user-hint">Wyloguj</span>
-        </div>
-        <svg class="user-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </div>
-    </div>
-
   </nav>
 
-  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <!-- MAIN -->
   <div id="main">
 
     <!-- TOPBAR -->
@@ -111,64 +366,49 @@
         <div class="battle-dot"></div>
         Battle Mode
       </div>
-      <div class="category-pill">📦 WKŁADKI</div>
       <div class="topbar-spacer"></div>
       <div class="agent-names" id="topbar-agents" style="display:none">
         <span class="agent-tag a" id="tag-a">Agent A</span>
-        <span class="score-badge" id="score-a">0</span>
         <span class="agent-vs">VS</span>
-        <span class="score-badge" id="score-b">0</span>
         <span class="agent-tag b" id="tag-b">Agent B</span>
       </div>
       <div class="topbar-spacer"></div>
     </header>
 
-    <!-- CHAT AREA -->
+    <!-- CHAT -->
     <div id="chat-area">
       <div id="empty-state">
         <div class="empty-icon">⚔️</div>
         <div class="empty-title">RAG Arena</div>
-        <p class="empty-sub">Zadaj pytanie — obaj agenci RAG odpowiedzą równocześnie. Zdecyduj który radzi sobie lepiej i zgłoś błędy.</p>
+        <p class="empty-sub">Zadaj pytanie — obaj agenci RAG odpowiedzą równocześnie. Zdecyduj który radzi sobie lepiej.</p>
         <div class="empty-hints">
-          <span class="hint-chip" onclick="useHint(this)">Potrzebuję samozamykacza</span>
-          <span class="hint-chip" onclick="useHint(this)">Jakie zamki do drzwi zewnętrznych?</span>
-          <span class="hint-chip" onclick="useHint(this)">Klamki do drzwi przesuwnych</span>
-          <span class="hint-chip" onclick="useHint(this)">Zawiasy do drzwi drewnianych</span>
+          <span class="hint-chip" onclick="useHint(this)">Co to jest RAG?</span>
+          <span class="hint-chip" onclick="useHint(this)">Jakie dokumenty obsługujemy?</span>
+          <span class="hint-chip" onclick="useHint(this)">Opisz naszą ofertę handlową</span>
+          <span class="hint-chip" onclick="useHint(this)">Jakie są korzyści z AI?</span>
         </div>
       </div>
     </div>
 
     <!-- VOTE BAR -->
     <div id="vote-bar">
-      <div class="vote-label" id="vote-label">Oceń odpowiedzi agentów</div>
-
-      <!-- Faza 1 -->
-      <div class="vote-buttons" id="vote-phase-1">
-        <button class="vote-btn v-split-a" onclick="vote('A_OK_B_BAD')">
-          A: Dobre / B: Błąd <span class="key-hint">1</span>
+      <div class="vote-label">Który agent odpowiedział lepiej?</div>
+      <div class="vote-buttons">
+        <button class="vote-btn vote-a" id="vote-a" onclick="castVote('A')">
+          ← <span id="vote-a-label">Agent A jest lepszy</span>
         </button>
-        <button class="vote-btn v-tie" onclick="vote('Tie')">
-          Oba poprawne <span class="key-hint">2</span>
+        <button class="vote-btn vote-both" id="vote-both" onclick="castVote('both')">
+          ✓ Oba dobre
         </button>
-        <button class="vote-btn v-bad" onclick="vote('Bad')">
-          Oba słabe <span class="key-hint">3</span>
+        <button class="vote-btn vote-none" id="vote-none" onclick="castVote('none')">
+          ✕ Oba słabe
         </button>
-        <button class="vote-btn v-split-b" onclick="vote('B_OK_A_BAD')">
-          B: Dobre / A: Błąd <span class="key-hint">4</span>
+        <button class="vote-btn vote-b" id="vote-b" onclick="castVote('B')">
+          <span id="vote-b-label">Agent B jest lepszy</span> →
         </button>
       </div>
-
-      <!-- Faza 2 (po "Oba poprawne") -->
-      <div class="vote-buttons phase2-hidden" id="vote-phase-2">
-        <button class="vote-btn v-left" onclick="vote('A')">
-          ← Lewy lepszy <span class="key-hint">A</span>
-        </button>
-        <button class="vote-btn v-same" onclick="vote('Tie_Phase2')">
-          Takie same <span class="key-hint">S</span>
-        </button>
-        <button class="vote-btn v-right" onclick="vote('B')">
-          Prawy lepszy → <span class="key-hint">B</span>
-        </button>
+      <div class="vote-result-row" id="vote-result-row">
+        Dziękujemy! <strong id="vote-result-text"></strong>
       </div>
     </div>
 
@@ -176,112 +416,378 @@
     <div id="input-area">
       <div class="input-box">
         <div class="input-row">
-          <textarea id="chat-input" rows="1" placeholder="Zadaj pytanie obu agentom…"
-            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <textarea id="chat-input" rows="1" placeholder="Zadaj pytanie obu agentom…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
           <button id="send-btn" onclick="sendMessage()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
         <div class="input-toolbar">
+          <button class="toolbar-btn" onclick="newChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nowy czat
+          </button>
+          <button class="toolbar-btn" onclick="openLeaderboard()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Wyniki
+          </button>
           <div class="toolbar-spacer"></div>
-          <span class="input-hint">Enter = wyślij · Shift+Enter = nowa linia</span>
+          <span class="input-hint">Enter = wyślij &nbsp;·&nbsp; Shift+Enter = nowa linia</span>
         </div>
       </div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /app-shell -->
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  MODAL: ZGŁOSZENIE BŁĘDU                               -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div id="error-modal" class="modal-overlay hidden">
-  <div class="modal-box" id="error-modal-box">
-    <div class="modal-title">⚠ Zgłoszenie błędu</div>
-    <div class="modal-cols" id="error-modal-cols">
-
-      <!-- Agent A -->
-      <div class="modal-col" id="error-col-a">
-        <div class="modal-col-title col-a-title">Agent A (Lewy)</div>
-        <textarea id="error-note-a" placeholder="Opisz błąd Agenta A…"></textarea>
-        <p class="stars-label">Jak krytyczny jest błąd?</p>
-        <div class="star-rating">
-          <input type="radio" id="sa5" name="rating-a" value="5"><label for="sa5">★</label>
-          <input type="radio" id="sa4" name="rating-a" value="4"><label for="sa4">★</label>
-          <input type="radio" id="sa3" name="rating-a" value="3"><label for="sa3">★</label>
-          <input type="radio" id="sa2" name="rating-a" value="2"><label for="sa2">★</label>
-          <input type="radio" id="sa1" name="rating-a" value="1"><label for="sa1">★</label>
-        </div>
-      </div>
-
-      <div class="modal-divider" id="error-modal-divider"></div>
-
-      <!-- Agent B -->
-      <div class="modal-col" id="error-col-b">
-        <div class="modal-col-title col-b-title">Agent B (Prawy)</div>
-        <textarea id="error-note-b" placeholder="Opisz błąd Agenta B…"></textarea>
-        <p class="stars-label">Jak krytyczny jest błąd?</p>
-        <div class="star-rating">
-          <input type="radio" id="sb5" name="rating-b" value="5"><label for="sb5">★</label>
-          <input type="radio" id="sb4" name="rating-b" value="4"><label for="sb4">★</label>
-          <input type="radio" id="sb3" name="rating-b" value="3"><label for="sb3">★</label>
-          <input type="radio" id="sb2" name="rating-b" value="2"><label for="sb2">★</label>
-          <input type="radio" id="sb1" name="rating-b" value="1"><label for="sb1">★</label>
-        </div>
-      </div>
-
-    </div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="cancelError()">Anuluj</button>
-      <button class="modal-submit" onclick="submitError()">Zgłoś błąd</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  MODAL: ZMIANA NAZWY                                   -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div id="rename-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="width:400px">
-    <div class="modal-title" style="font-size:16px;border:none;padding:0 0 16px">Zmień tytuł czatu</div>
-    <input type="text" id="rename-input" class="rename-input" placeholder="Nowy tytuł…" maxlength="50" onkeypress="renameKey(event)" />
-    <input type="hidden" id="rename-chat-id" />
-    <div class="modal-actions" style="margin-top:16px">
-      <button class="modal-cancel" onclick="closeRename()">Anuluj</button>
-      <button class="modal-submit" style="background:var(--blue)" onclick="submitRename()">Zapisz</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  MODAL: SUKCES / CZAT ZABLOKOWANY                      -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div id="success-modal" class="modal-overlay hidden">
-  <div class="modal-box success-box">
-    <div class="success-icon">🏆</div>
-    <div class="success-title" id="success-title">Gratulacje!</div>
-    <p class="success-sub" id="success-sub">Dziękujemy za znalezienie błędu. Czat jest zablokowany.</p>
-    <div class="success-reminder">📦 Pamiętaj — aktualnie testujemy tylko kategorię <strong>WKŁADKI</strong>.<br>Zadawaj pytania wyłącznie o wkładki. Brak odpowiedzi na inne produkty nie jest błędem!</div>
-    <button class="login-btn" style="margin-top:24px" onclick="resetChat()">Rozpocznij nowy test</button>
-    <button class="modal-cancel" style="margin-top:8px;width:100%;text-align:center" id="success-close-btn" onclick="closeSuccessModal()">Zamknij podgląd</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!--  LEADERBOARD PANEL (statystyki sesji)                  -->
-<!-- ══════════════════════════════════════════════════════ -->
+<!-- LEADERBOARD -->
 <div id="lb-panel">
   <div class="lb-box">
     <button class="modal-close" onclick="closeLeaderboard()">✕</button>
-    <div class="lb-title">📊 Wyniki sesji</div>
-    <div class="lb-sub" id="lb-sub">Statystyki głosowań</div>
+    <div class="lb-title">📊 Wyniki głosowania</div>
+    <div class="lb-sub" id="lb-sub">Statystyki z bieżącej sesji</div>
     <div id="lb-content"></div>
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<script src="script.js"></script>
+<script>
+// ════════════════════════════════════════════════
+//  ⚙️  KONFIGURACJA — wpisz swoje webhooki tutaj
+// ════════════════════════════════════════════════
+
+const WEBHOOK_A     = 'https://mediafy-sparta.app.n8n.cloud/webhook/6b1aed39-07a5-4cc3-98d7-3f0bb23d18b9';   // Agent A
+const WEBHOOK_B     = 'TUTAJ_WKLEJ_URL_AGENTA_B';   // np. https://xxx.n8n.cloud/webhook/agent-b
+const WEBHOOK_VOTES = '';                            // opcjonalny — do zapisywania głosów w n8n
+const NAME_A        = 'Agent A';                     // wyświetlana nazwa agenta A
+const NAME_B        = 'Agent B';                     // wyświetlana nazwa agenta B
+
+// ════════════════════════════════════════════════
+//  Nie zmieniaj nic poniżej tej linii
+// ════════════════════════════════════════════════
+
+// Unikalny identyfikator sesji — generowany raz przy załadowaniu strony
+let currentSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+const S = {
+  votes: { A:0, B:0, both:0, none:0 },
+  totalVotes: 0,
+  currentTurn: null,
+  waiting: false,
+};
+
+// Załaduj statystyki głosowań z localStorage
+function loadVotes() {
+  try {
+    const v = JSON.parse(localStorage.getItem('rag_arena_votes') || '{}');
+    S.votes      = v.votes      || { A:0, B:0, both:0, none:0 };
+    S.totalVotes = v.totalVotes || 0;
+  } catch(e) {}
+}
+function saveVotes() {
+  localStorage.setItem('rag_arena_votes', JSON.stringify({ votes: S.votes, totalVotes: S.totalVotes }));
+}
+
+// Ustaw nazwy agentów w UI
+function initLabels() {
+  document.getElementById('tag-a').textContent        = NAME_A;
+  document.getElementById('tag-b').textContent        = NAME_B;
+  document.getElementById('vote-a-label').textContent = NAME_A + ' jest lepszy';
+  document.getElementById('vote-b-label').textContent = NAME_B + ' jest lepszy';
+}
+
+// ── LEADERBOARD ──────────────────────────────────
+function openLeaderboard() {
+  const v = S.votes, t = S.totalVotes;
+  document.getElementById('lb-sub').textContent = `Łącznie głosowań: ${t}`;
+  if (t === 0) {
+    document.getElementById('lb-content').innerHTML = '<div class="lb-empty">Brak głosowań jeszcze — zadaj pytanie i oceń odpowiedzi.</div>';
+  } else {
+    const pct = n => t > 0 ? Math.round((n/t)*100) : 0;
+    const rows = [
+      { label: `⬅ ${NAME_A} jest lepszy`, val: v.A,    color:'#3b82f6' },
+      { label: `✓ Oba dobre`,              val: v.both, color:'#eab308' },
+      { label: `✕ Oba słabe`,              val: v.none, color:'#ef4444' },
+      { label: `${NAME_B} jest lepszy ➡`, val: v.B,    color:'#10a37f' },
+    ].sort((a,b) => b.val - a.val);
+    document.getElementById('lb-content').innerHTML = `
+      <table class="lb-table">
+        <thead><tr><th>Wynik</th><th>Głosy</th><th style="width:120px">Udział</th></tr></thead>
+        <tbody>${rows.map(r => `
+          <tr>
+            <td>${r.label}</td>
+            <td class="lb-count">${r.val} <span style="color:var(--text3);font-weight:400">(${pct(r.val)}%)</span></td>
+            <td><div class="lb-bar-wrap"><div class="lb-bar" style="width:${pct(r.val)}%;background:${r.color}"></div></div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+  document.getElementById('lb-panel').classList.add('open');
+}
+function closeLeaderboard() {
+  document.getElementById('lb-panel').classList.remove('open');
+}
+
+// ── CHAT ─────────────────────────────────────────
+function newChat() {
+  document.querySelectorAll('.msg-turn').forEach(el => el.remove());
+  document.getElementById('empty-state').style.display = 'flex';
+  hideVoteBar();
+  S.currentTurn = null;
+  S.waiting = false;
+  enableInput();
+  // Resetuj sesję przy nowej rozmowie
+  currentSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+function useHint(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  autoResize(document.getElementById('chat-input'));
+  sendMessage();
+}
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg || S.waiting) return;
+
+  document.getElementById('empty-state').style.display = 'none';
+  input.value = '';
+  autoResize(input);
+  disableInput();
+  hideVoteBar();
+  addHistory(msg);
+  S.waiting = true;
+
+  const chatArea = document.getElementById('chat-area');
+  const turnId = Date.now();
+  const idA = `body-a-${turnId}`;
+  const idB = `body-b-${turnId}`;
+  const turnEl = document.createElement('div');
+  turnEl.className = 'msg-turn fade-up';
+  turnEl.innerHTML = `
+    <div class="user-wrap">
+      <div class="user-bubble">${esc(msg)}</div>
+    </div>
+    <div class="battle-row">
+      <div class="agent-card" id="card-a-${turnId}">
+        <div class="agent-card-header">
+          <span class="agent-card-label a">${esc(NAME_A)}</span>
+          <div class="agent-card-actions">
+            <button class="card-action-btn" onclick="copyCard('${idA}')" title="Kopiuj odpowiedź">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="agent-card-body" id="${idA}">
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="agent-card" id="card-b-${turnId}">
+        <div class="agent-card-header">
+          <span class="agent-card-label b">${esc(NAME_B)}</span>
+          <div class="agent-card-actions">
+            <button class="card-action-btn" onclick="copyCard('${idB}')" title="Kopiuj odpowiedź">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="agent-card-body" id="${idB}">
+          <div class="typing-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+    </div>`;
+  chatArea.appendChild(turnEl);
+  document.getElementById('topbar-agents').style.display = 'flex';
+  scrollDown();
+
+  S.currentTurn = { msg, responseA: '', responseB: '', cardA: `card-a-${turnId}`, cardB: `card-b-${turnId}` };
+
+  const [rA, rB] = await Promise.allSettled([
+    fetchAgent(WEBHOOK_A, msg),
+    fetchAgent(WEBHOOK_B, msg),
+  ]);
+
+  const bodyA = document.getElementById(idA);
+  if (rA.status === 'fulfilled') {
+    S.currentTurn.responseA = rA.value;
+    typewriter(bodyA, rA.value);
+  } else {
+    bodyA.innerHTML = `<span style="color:#ef4444;font-size:12.5px">⚠ Błąd połączenia z ${esc(NAME_A)}: ${esc(String(rA.reason))}</span>`;
+  }
+
+  const bodyB = document.getElementById(idB);
+  if (rB.status === 'fulfilled') {
+    S.currentTurn.responseB = rB.value;
+    typewriter(bodyB, rB.value);
+  } else {
+    bodyB.innerHTML = `<span style="color:#ef4444;font-size:12.5px">⚠ Błąd połączenia z ${esc(NAME_B)}: ${esc(String(rB.reason))}</span>`;
+  }
+
+  S.waiting = false;
+  enableInput();
+  showVoteBar();
+  scrollDown();
+}
+
+async function fetchAgent(url, message) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, sessionId: currentSessionId }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.output ?? data.response ?? data.text ?? data.answer
+    ?? data.message ?? data.content
+    ?? (typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+}
+
+function typewriter(el, text) {
+  el.innerHTML = '';
+  el.classList.add('streaming-cursor');
+  const delay = Math.max(5, Math.min(25, Math.floor(2500 / text.length)));
+  let i = 0;
+  const tick = () => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      scrollDown();
+      setTimeout(tick, delay);
+    } else {
+      el.classList.remove('streaming-cursor');
+      el.innerHTML = renderMd(text);
+    }
+  };
+  tick();
+}
+
+function renderMd(text) {
+  return text
+    .split('\n\n')
+    .map(para => {
+      const t = para.trim();
+      if (t.startsWith('### ')) return `<p><strong style="color:var(--text)">${esc(t.slice(4))}</strong></p>`;
+      if (t.startsWith('## '))  return `<p><strong style="color:var(--text);font-size:14px">${esc(t.slice(3))}</strong></p>`;
+      if (t.startsWith('# '))   return `<p><strong style="color:var(--text);font-size:15px">${esc(t.slice(2))}</strong></p>`;
+      if (/^[-•*]\s/.test(t)) {
+        const items = t.split('\n').filter(Boolean).map(l => `<li>${esc(l.replace(/^[-•*]\s*/,''))}</li>`).join('');
+        return `<ul>${items}</ul>`;
+      }
+      if (/^\d+\.\s/.test(t)) {
+        const items = t.split('\n').filter(Boolean).map(l => `<li>${esc(l.replace(/^\d+\.\s*/,''))}</li>`).join('');
+        return `<ol style="padding-left:1.4em">${items}</ol>`;
+      }
+      return `<p>${esc(para)}</p>`;
+    })
+    .join('')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>')
+    .replace(/`(.+?)`/g, '<code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--blue-light)">$1</code>');
+}
+
+// ── VOTE ─────────────────────────────────────────
+function showVoteBar() {
+  document.getElementById('vote-bar').classList.add('visible');
+  document.querySelectorAll('.vote-btn').forEach(b => { b.classList.remove('voted'); b.disabled = false; });
+  document.getElementById('vote-result-row').classList.remove('visible');
+}
+function hideVoteBar() {
+  document.getElementById('vote-bar').classList.remove('visible');
+}
+
+async function castVote(choice) {
+  document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+
+  const btnId = { A:'vote-a', B:'vote-b', both:'vote-both', none:'vote-none' }[choice];
+  document.getElementById(btnId)?.classList.add('voted');
+
+  if (S.currentTurn?.cardA) {
+    const cA = document.getElementById(S.currentTurn.cardA);
+    const cB = document.getElementById(S.currentTurn.cardB);
+    cA?.classList.remove('winner-a','winner-b');
+    cB?.classList.remove('winner-a','winner-b');
+    if (choice === 'A') cA?.classList.add('winner-a');
+    if (choice === 'B') cB?.classList.add('winner-b');
+  }
+
+  S.votes[choice] = (S.votes[choice] || 0) + 1;
+  S.totalVotes++;
+  saveVotes();
+
+  const labels = {
+    A:    `Lepszy: ${NAME_A}`,
+    B:    `Lepszy: ${NAME_B}`,
+    both: 'Oba odpowiedziały dobrze',
+    none: 'Żaden nie spełnił oczekiwań',
+  };
+  document.getElementById('vote-result-text').textContent = labels[choice];
+  document.getElementById('vote-result-row').classList.add('visible');
+
+  if (WEBHOOK_VOTES && S.currentTurn) {
+    fetch(WEBHOOK_VOTES, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question:  S.currentTurn.msg,
+        responseA: S.currentTurn.responseA,
+        responseB: S.currentTurn.responseB,
+        vote:      choice,
+        nameA:     NAME_A,
+        nameB:     NAME_B,
+        timestamp: new Date().toISOString(),
+      }),
+    }).catch(() => {});
+  }
+
+  showToast('✓ Głos zapisany');
+}
+
+// ── UTILS ─────────────────────────────────────────
+function disableInput() {
+  document.getElementById('chat-input').disabled = true;
+  document.getElementById('send-btn').disabled = true;
+}
+function enableInput() {
+  document.getElementById('chat-input').disabled = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+function scrollDown() {
+  const ca = document.getElementById('chat-area');
+  ca.scrollTop = ca.scrollHeight;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function copyCard(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el?.innerText || '').then(() => showToast('✓ Skopiowano'));
+}
+function addHistory(msg) {
+  const list = document.getElementById('history-list');
+  const btn = document.createElement('button');
+  btn.className = 'history-item';
+  btn.innerHTML = `<span class="hist-dot"></span>${esc(msg.length > 32 ? msg.slice(0,32)+'…' : msg)}`;
+  list.prepend(btn);
+}
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ── INIT ─────────────────────────────────────────
+loadVotes();
+initLabels();
+document.getElementById('lb-panel').addEventListener('click', e => { if (e.target.id === 'lb-panel') closeLeaderboard(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLeaderboard(); });
+</script>
 </body>
 </html>
