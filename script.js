@@ -901,18 +901,31 @@ async function sendFeedbackData(winner, errorDetails, voteType) {
   const statusMap = {
     'A_OK_B_BAD':  { A: 'WYGRANA 🏆', B: 'BŁĄD ❌' },
     'B_OK_A_BAD':  { A: 'BŁĄD ❌',    B: 'WYGRANA 🏆' },
-    'Bad':         { A: '.',           B: '.' },
+    'Bad':         { A: 'BŁĄD ❌',    B: 'BŁĄD ❌' },
     'A':           { A: 'WYGRANA 🏆', B: 'PRZEGRANA' },
     'B':           { A: 'PRZEGRANA',  B: 'WYGRANA 🏆' },
     'Tie':         { A: 'REMIS 🤝',   B: 'REMIS 🤝' },
     'Tie_Phase2':  { A: 'REMIS 🤝',   B: 'REMIS 🤝' },
   };
+
+  // Czytelna etykieta winnera do arkusza
+  const winnerLabel = {
+    'Bad':        'OBA',
+    'A_OK_B_BAD': 'B',
+    'B_OK_A_BAD': 'A',
+    'A':          'A',
+    'B':          'B',
+    'Tie':        'REMIS',
+    'Tie_Phase2': 'REMIS',
+  }[winner] || winner;
   const status = statusMap[winner] || { A: '.', B: '.' };
 
   const payload = {
     user:                   currentUser,
     sessionId:              sessionId,
-    winner:                 winner,
+    winner:                 winnerLabel,
+    error_winner:           voteType === 'error_report' ? winnerLabel : '',
+    preference_winner:      voteType === 'preference' ? winnerLabel : '',
     vote_type:              voteType,
     query:                  lastQuery,
     response_A:             lastResponseA,
