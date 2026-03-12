@@ -660,9 +660,11 @@ function vote(winner) {
   sessionVotes[winner] = (sessionVotes[winner] || 0) + 1;
 
   if (winner === 'Tie') {
-    // Oba poprawne → faza 2
+    // Oba poprawne → każdy dostaje punkt, potem faza 2
     applyClasses(currentCardA, 'success');
     applyClasses(currentCardB, 'success');
+    scoreA++; scoreB++;
+    updateScoreBadges();
     showVotePhase2();
     return;
   }
@@ -920,6 +922,8 @@ async function sendFeedbackData(winner, errorDetails, voteType) {
     latency_A:              lastLatencyA,
     latency_B:              lastLatencyB,
     user_total_questions:   totalQuestions,
+    score_a:                scoreA,
+    score_b:                scoreB,
     full_history_A:         histA.join(sep),
     full_history_B:         histB.join(sep),
     chat_history_json:      chatHistory,
